@@ -1,8 +1,11 @@
-function App(dropZoneID,downloadID,testButtonID){
+function App(dropZoneID,downloadID,testButtonID,removeButtonID){
 	this.csvDropZone = document.getElementById(dropZoneID);
 	this.downloadLink = document.getElementById(downloadID);
 	this.testButton = document.getElementById(testButtonID);
+	this.removeButton = document.getElementById(removeButtonID);
 	this.commaSplitData;
+	this.customersToRemove;
+	this.customerRemovedArr;
 	this.captureCSV = new CaptureCSV();
 }
 
@@ -22,14 +25,19 @@ App.prototype.initApp = function() {
 		this.runTests();
 	}.bind(this),false);
 
+	this.removeButton.addEventListener("click",function(e){
+		e.preventDefault();
+		this.removeClicked();
+	}.bind(this),false);
+
 };
 
 App.prototype.runTests = function(){
 	console.log("run tests");
 	try{
-		Tests.checkLength(this.cryeEditedArray,this.commaSplitData[0].length);
-		Tests.checkCryeCodes(this.cryeEditedArray);
-		Tests.checkForDups(this.noDupArray);
+		Tests.checkLength(this.commaSplitData,this.commaSplitData[0].length);
+		Tests.checkRemovedCustomer(this.customerRemovedArr,this.emptyIndex);
+
 	}
 	catch(err){
 		console.log("error testing ",err);
@@ -41,6 +49,7 @@ App.prototype.createCSV = function(arr){
 
 	arr.forEach(function(rowArr,index){
 		let row = rowArr.join("");
+		//console.log(row);
 		lineArray.push(index == 0 ? "data:text/csv;charset=utf-8," + row:row);	
 		//lineArray.push(row);
 	});
@@ -50,12 +59,46 @@ App.prototype.createCSV = function(arr){
 	return encodedUri;
 };
 
+App.prototype.createBlob = function(arr){
+	let lineArray = [];
+
+	arr.forEach(function(rowArr,index){
+		let row = rowArr.join("");
+		//console.log(row);
+		lineArray.push(row);	
+		//lineArray.push(row);
+	});
+	let csvContent = lineArray.join("\n");
+	let csvData = new Blob([csvContent],{type:'text/csv'});
+	let csvURL = URL.createObjectURL(csvData);
+	return csvURL;
+};
+
 App.prototype.createDownload = function(csvData){
 	this.downloadLink.classList.remove("hide");
 	this.downloadLink.setAttribute("href","");
 	this.downloadLink.setAttribute("href",csvData);
 	this.downloadLink.setAttribute("download", "new_data.csv");
 };
+
+App.prototype.removeClicked = function(){
+	try{
+		let editCustomers = new EditCustomer(this.commaSplitData,"Date of First Order");
+		this.customerRemovedArr = editCustomers.removeRows(this.commaSplitData);
+		this.customersToRemove = editCustomers.removedNames;
+		this.emptyIndex = editCustomers.emptyField;
+		//console.log(Object.keys(this.customersToRemove).length);
+		console.log(this.customerRemovedArr);
+		let csvData = this.createBlob(this.customerRemovedArr);
+		this.createDownload(csvData);
+
+	}
+	catch(err){
+		console.log("error testing ",err);
+	}
+};
+
+
 
 
 App.prototype.fileDropped = function(event){
@@ -65,8 +108,7 @@ App.prototype.fileDropped = function(event){
 	.then(commaSplitData => {
 		this.commaSplitData = commaSplitData;
 		console.log(this.commaSplitData);
-		let csvData = this.createCSV(this.commaSplitData);
-		this.createDownload(csvData);
+		
 	})
 
 	.catch(err => {
@@ -75,5 +117,5 @@ App.prototype.fileDropped = function(event){
 	//console.log(this.commaSplitData);
 };
 
-let app = new App("drop_zone","downloadLink","testData");
+let app = new App("drop_zone","downloadLink","testData","removeData");
 window.onload = app.initApp();
