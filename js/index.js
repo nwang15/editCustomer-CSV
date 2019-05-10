@@ -1,6 +1,7 @@
-function App(dropZoneID,downloadID,testButtonID,removeButtonID){
+function App(dropZoneID,downloadID,testButtonID,removeButtonID,download2ID){
 	this.csvDropZone = document.getElementById(dropZoneID);
 	this.downloadLink = document.getElementById(downloadID);
+	this.downloadLink2 = document.getElementById(download2ID);
 	this.testButton = document.getElementById(testButtonID);
 	this.removeButton = document.getElementById(removeButtonID);
 	this.commaSplitData;
@@ -37,6 +38,7 @@ App.prototype.runTests = function(){
 	try{
 		Tests.checkLength(this.commaSplitData,this.commaSplitData[0].length);
 		Tests.checkRemovedCustomer(this.customerRemovedArr,this.emptyIndex);
+		Tests.checkRemovedCustomer(this.customersToRemove,this.emptyIndex,true);
 
 	}
 	catch(err){
@@ -74,23 +76,30 @@ App.prototype.createBlob = function(arr){
 	return csvURL;
 };
 
-App.prototype.createDownload = function(csvData){
+App.prototype.createDownload = function(csvData,filterByData){
 	this.downloadLink.classList.remove("hide");
 	this.downloadLink.setAttribute("href","");
 	this.downloadLink.setAttribute("href",csvData);
 	this.downloadLink.setAttribute("download", "new_data.csv");
+	if(filterByData){
+		this.downloadLink2.classList.remove("hide");
+		this.downloadLink2.setAttribute("href","");
+		this.downloadLink2.setAttribute("href",filterByData);
+		this.downloadLink2.setAttribute("download", "filter_by.csv");
+	}
 };
 
 App.prototype.removeClicked = function(){
 	try{
-		let editCustomers = new EditCustomer(this.commaSplitData,"Date of First Order");
+		let editCustomers = new EditCustomer(this.commaSplitData,"Date of First Order","name");
 		this.customerRemovedArr = editCustomers.removeRows(this.commaSplitData);
 		this.customersToRemove = editCustomers.removedNames;
 		this.emptyIndex = editCustomers.emptyField;
 		//console.log(Object.keys(this.customersToRemove).length);
 		console.log(this.customerRemovedArr);
 		let csvData = this.createBlob(this.customerRemovedArr);
-		this.createDownload(csvData);
+		let filterData = this.createBlob(this.customersToRemove);
+		this.createDownload(csvData,filterData);
 
 	}
 	catch(err){
@@ -117,5 +126,5 @@ App.prototype.fileDropped = function(event){
 	//console.log(this.commaSplitData);
 };
 
-let app = new App("drop_zone","downloadLink","testData","removeData");
+let app = new App("drop_zone","downloadLink","testData","removeData","downloadLink2");
 window.onload = app.initApp();

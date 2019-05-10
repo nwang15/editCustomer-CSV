@@ -25,11 +25,14 @@ function checkLength(arr,arrLength){
 	}
 }
 
-function checkRemovedCustomer(arr,emtpyIndex){
+function checkRemovedCustomer(arr,emtpyIndex,empty){
 	let incorrectIndexes = [];
 	console.log("checking removed customers");
-	for(let i = 0;i < arr.length;i++){
-		if(arr[i][emtpyIndex] === ","){
+	for(let i = 1;i < arr.length;i++){
+		if(arr[i][emtpyIndex] === "," && !empty){
+			incorrectIndexes.push(i);
+		}
+		else if(empty && arr[i][emtpyIndex] !== ","){
 			incorrectIndexes.push(i);
 		}
 	}
