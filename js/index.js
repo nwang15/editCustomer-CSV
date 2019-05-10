@@ -1,13 +1,18 @@
-function App(dropZoneID,downloadID,testButtonID,removeButtonID,download2ID){
+function App(dropZoneID,downloadID,testButtonID,removeButtonID,download2ID,filterDropZoneID,filterButtonID){
 	this.csvDropZone = document.getElementById(dropZoneID);
 	this.downloadLink = document.getElementById(downloadID);
 	this.downloadLink2 = document.getElementById(download2ID);
 	this.testButton = document.getElementById(testButtonID);
 	this.removeButton = document.getElementById(removeButtonID);
+	this.filterDropZone = document.getElementById(filterDropZoneID);
+	this.filterButton = document.getElementById(filterButtonID);
 	this.commaSplitData;
 	this.customersToRemove;
 	this.customerRemovedArr;
+	this.filteredData;
+	this.nameArray;
 	this.captureCSV = new CaptureCSV();
+	this.editItemCodes;
 }
 
 App.prototype.initApp = function() {
@@ -31,6 +36,21 @@ App.prototype.initApp = function() {
 		this.removeClicked();
 	}.bind(this),false);
 
+	this.filterButton.addEventListener("click",function(e){
+		e.preventDefault();
+		this.filterClicked();
+	}.bind(this),false);
+
+	this.filterDropZone.addEventListener("drop",function(e){
+		e.preventDefault();
+		this.filterFileDropped(e);
+	}.bind(this),false);
+
+	//need this to prevent default downloading of file
+	this.filterDropZone.addEventListener("dragover",function(e){
+		e.preventDefault();
+	}.bind(this),false);
+
 };
 
 App.prototype.runTests = function(){
@@ -39,6 +59,7 @@ App.prototype.runTests = function(){
 		Tests.checkLength(this.commaSplitData,this.commaSplitData[0].length);
 		Tests.checkRemovedCustomer(this.customerRemovedArr,this.emptyIndex);
 		Tests.checkRemovedCustomer(this.customersToRemove,this.emptyIndex,true);
+		Tests.checkFilteredCustomer(this.filterData,this.nameArray,this.editItemCodes.itemCodeIndex);
 
 	}
 	catch(err){
@@ -107,8 +128,39 @@ App.prototype.removeClicked = function(){
 	}
 };
 
+App.prototype.filterClicked = function(){
+	console.log("filter clicked");
+	try{
+		let filteredData = this.editItemCodes.removeByItemCode(this.commaSplitData,this.nameArray);
+		console.log(filteredData);
+		this.filterData = filteredData;
+		let csvData = this.createBlob(filteredData);
+		this.createDownload(csvData);
+	}
+	catch(err){
+		console.log("error testing ",err);
+	}
+};
 
+App.prototype.filterFileDropped = function(event){
+	let csvFile = event.dataTransfer.items[0].getAsFile();
+	this.captureCSV.readFile(csvFile)
 
+	.then(commaSplitData => {
+		let filterByData = commaSplitData;
+		
+		let editItemCodes = new EditItemCodes(filterByData,"Name");
+		//editItemCodes.adjustItemCodes(filterByData);
+		this.editItemCodes = editItemCodes;
+		this.nameArray = editItemCodes.captureItemCodes(commaSplitData);
+		console.log("item codes ",this.nameArray);
+	})
+
+	.catch(err => {
+		console.log("error reading file", err);
+	});
+	//console.log(this.commaSplitData);
+};
 
 App.prototype.fileDropped = function(event){
 	let csvFile = event.dataTransfer.items[0].getAsFile();
@@ -126,5 +178,5 @@ App.prototype.fileDropped = function(event){
 	//console.log(this.commaSplitData);
 };
 
-let app = new App("drop_zone","downloadLink","testData","removeData","downloadLink2");
+let app = new App("drop_zone","downloadLink","testData","removeData","downloadLink2","drop_zone_filter","filterData");
 window.onload = app.initApp();
