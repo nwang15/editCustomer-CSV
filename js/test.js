@@ -61,3 +61,5 @@ function checkFilteredCustomer(arr,names,nameIndex){
 		console.log("test failed: ",incorrectIndexes);
 	}
 }
+
+//test
